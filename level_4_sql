@@ -1,0 +1,37 @@
+-- Creating an index to improve query performance
+CREATE INDEX idx_employee_department ON employees(department_id);
+
+-- Using EXPLAIN to analyze query performance
+EXPLAIN ANALYZE
+SELECT * FROM employees WHERE department_id = 2;
+
+-- Dynamic SQL example
+DO $$
+DECLARE table_name TEXT := 'employees';
+BEGIN
+    EXECUTE format('SELECT * FROM %I LIMIT 10', table_name);
+END $$;
+
+-- Creating a stored procedure to return top earners by department
+CREATE OR REPLACE FUNCTION get_top_earners(dept_id INT, limit_num INT)
+RETURNS TABLE(first_name VARCHAR, last_name VARCHAR, salary DECIMAL) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT first_name, last_name, salary
+    FROM employees
+    WHERE department_id = dept_id
+    ORDER BY salary DESC
+    LIMIT limit_num;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Calling the stored procedure
+SELECT * FROM get_top_earners(2, 5);
+
+-- Complex aggregation: pivoting data
+SELECT department,
+       SUM(CASE WHEN salary < 60000 THEN 1 ELSE 0 END) AS low_salary_count,
+       SUM(CASE WHEN salary BETWEEN 60000 AND 75000 THEN 1 ELSE 0 END) AS medium_salary_count,
+       SUM(CASE WHEN salary > 75000 THEN 1 ELSE 0 END) AS high_salary_count
+FROM employees
+GROUP BY department;
