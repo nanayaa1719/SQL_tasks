@@ -1,0 +1,44 @@
+
+-- Creating a sales table for window functions
+CREATE TABLE sales (
+    sale_id SERIAL PRIMARY KEY,
+    employee_id INT,
+    department_id INT,
+    sale_amount DECIMAL(10,2),
+    sale_date DATE
+);
+
+-- Inserting sample data
+INSERT INTO sales (employee_id, department_id, sale_amount, sale_date) VALUES
+(1, 2, 500, '2023-01-10'),
+(2, 2, 700, '2023-02-15'),
+(3, 3, 800, '2023-03-20'),
+(4, 1, 650, '2023-04-05');
+
+-- Using window functions for ranking sales by department
+SELECT employee_id, department_id, sale_amount,
+       RANK() OVER(PARTITION BY department_id ORDER BY sale_amount DESC) AS sale_rank
+FROM sales;
+
+-- Recursive CTE example: generating a sequence of dates
+WITH RECURSIVE date_series AS (
+    SELECT '2024-01-01'::DATE AS sale_date
+    UNION ALL
+    SELECT sale_date + INTERVAL '1 day'
+    FROM date_series
+    WHERE sale_date < '2024-01-10'
+)
+SELECT * FROM date_series;
+
+-- Complex filtering using EXISTS
+SELECT first_name, last_name
+FROM employees e
+WHERE EXISTS (
+    SELECT 1 FROM sales s WHERE s.employee_id = e.id AND s.sale_amount > 600
+);
+
+-- Using LEAD and LAG to compare sales trends
+SELECT employee_id, sale_amount,
+       LAG(sale_amount, 1) OVER(ORDER BY sale_date) AS previous_sale,
+       LEAD(sale_amount, 1) OVER(ORDER BY sale_date) AS next_sale
+FROM sales;
